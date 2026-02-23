@@ -1,0 +1,69 @@
+services:
+  db:
+    image: postgres:15
+    container_name: social_scribe_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: social_scribe_dev
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d social_scribe_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: social_scribe_app
+    working_dir: /app
+    volumes:
+      - .:/app
+      - mix_deps:/app/deps
+      - mix_build:/app/_build
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      MIX_ENV: dev
+      PHX_SERVER: "true"
+      DB_HOST: ${DB_HOST:-db}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_NAME: ${DB_NAME:-social_scribe_dev}
+      PORT: ${PORT:-4000}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-dummy}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-dummy}
+      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-http://localhost:4000/auth/google/callback}
+      LINKEDIN_CLIENT_ID: ${LINKEDIN_CLIENT_ID:-dummy}
+      LINKEDIN_CLIENT_SECRET: ${LINKEDIN_CLIENT_SECRET:-dummy}
+      LINKEDIN_REDIRECT_URI: ${LINKEDIN_REDIRECT_URI:-http://localhost:4000/auth/linkedin/callback}
+      FACEBOOK_CLIENT_ID: ${FACEBOOK_CLIENT_ID:-dummy}
+      FACEBOOK_CLIENT_SECRET: ${FACEBOOK_CLIENT_SECRET:-dummy}
+      FACEBOOK_REDIRECT_URI: ${FACEBOOK_REDIRECT_URI:-http://localhost:4000/auth/facebook/callback}
+      HUBSPOT_CLIENT_ID: ${HUBSPOT_CLIENT_ID:-dummy}
+      HUBSPOT_CLIENT_SECRET: ${HUBSPOT_CLIENT_SECRET:-dummy}
+      SALESFORCE_CLIENT_ID: ${SALESFORCE_CLIENT_ID:-dummy}
+      SALESFORCE_CLIENT_SECRET: ${SALESFORCE_CLIENT_SECRET:-dummy}
+      SALESFORCE_SITE: ${SALESFORCE_SITE:-https://login.salesforce.com}
+      RECALL_API_KEY: ${RECALL_API_KEY:-dummy}
+      RECALL_REGION: ${RECALL_REGION:-us-east-1}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      USE_FAKE_AI: ${USE_FAKE_AI:-false}
+    command:
+      - /bin/sh
+      - -c
+      - mix deps.get && mix ecto.create && mix ecto.migrate && mix phx.server
+    ports:
+      - "4000:4000"
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  mix_deps:
+  mix_build:
