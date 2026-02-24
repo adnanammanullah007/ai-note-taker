@@ -94,4 +94,4 @@ USER nobody
 # above and adding an entrypoint. See https://github.com/krallin/tini for details
 # ENTRYPOINT ["/tini", "--"]
 
-CMD ["/app/bin/start"]
+CMD ["/app/bin/social_scribe", "start"]
